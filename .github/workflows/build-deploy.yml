@@ -1,0 +1,14 @@
+name: Build and Deploy
+on: [push, workflow_dispatch]
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build images
+        run: docker compose build
+      - name: Deploy stack
+        run: |
+          export VAULT_TOKEN=${{ secrets.VAULT_TOKEN }}
+          ./fetch-secrets.sh
+          docker compose up -d

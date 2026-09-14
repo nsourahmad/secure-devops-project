@@ -1,0 +1,36 @@
+name: Security Scanning
+on: [push, workflow_dispatch]
+jobs:
+  security-scan:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: TruffleHog secret scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+
+      - name: Bandit SAST scan
+        run: |
+          pip install bandit --break-system-packages
+          bandit -r ./backend || true
+
+      - name: Hadolint - backend Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: backend/Dockerfile
+
+      - name: Hadolint - frontend Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: frontend/Dockerfile
+
+      - name: Build image for Trivy
+        run: docker build -t todo-backend:scan ./backend
+
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: todo-backend:scan
+          format: table
