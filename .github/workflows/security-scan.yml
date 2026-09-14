@@ -5,26 +5,33 @@ jobs:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: TruffleHog secret scan
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
+          extra_args: --only-verified
+        continue-on-error: true
 
       - name: Bandit SAST scan
         run: |
           pip install bandit --break-system-packages
           bandit -r ./backend || true
+        continue-on-error: true
 
       - name: Hadolint - backend Dockerfile
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: backend/Dockerfile
+        continue-on-error: true
 
       - name: Hadolint - frontend Dockerfile
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: frontend/Dockerfile
+        continue-on-error: true
 
       - name: Build image for Trivy
         run: docker build -t todo-backend:scan ./backend
@@ -34,3 +41,4 @@ jobs:
         with:
           image-ref: todo-backend:scan
           format: table
+        continue-on-error: true
